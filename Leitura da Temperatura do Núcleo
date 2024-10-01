@@ -1,0 +1,16 @@
+c #include <stdio.h>
+#include "pico/stdlib.h" 
+#include "hardware/adc.h" 
+#include "hardware/timer.h" // Constantes para converter a leitura do ADC em temperatura #define ADC_VREF 3.3f // Tensão de referência do ADC 
+#define ADC_MAX 4095 // Máximo valor que o ADC pode ler #define TEMP_OFFSET -50.0f // Offset de calibração da temperatura 
+#define TEMP_MULTIPLIER (ADC_VREF / (float)ADC_MAX * 100.0f) // Conversão para graus // Função para ler a temperatura da CPU 
+float read_cpu_temperature() { uint16_t adc_raw = adc_read(); // Lê o valor bruto do ADC float voltage = (float)adc_raw * ADC_VREF / (float)ADC_MAX; return (voltage - 0.706) / 0.001721 + TEMP_OFFSET; } // Callback para o timer
+bool timer_callback(repeating_timer_t *rt) { float temperature = read_cpu_temperature(); // Lê a temperatura da CPU printf("CPU Temperature: %.2f C\n", temperature); // Envia via UART 
+return true; // Retorna true para repetir o timer } int main() { // Inicializa UART para comunicação serial 
+stdio_init_all(); // Inicializa o ADC e seleciona o canal de temperatura (canal 4) 
+adc_init(); adc_set_temp_sensor_enabled(true); // Habilita o sensor de temperatura 
+adc_select_input(4); // Seleciona o canal 4 para leitura do sensor // Cria um timer periódico para executar a cada 1000 ms (1 segundo) 
+repeating_timer_t timer; 
+add_repeating_timer_ms(1000, timer_callback, NULL, &timer); // Loop principal (não faz nada, pois o timer cuida das leituras) 
+while (1) { tight_loop_contents(); } 
+return 0; } 
