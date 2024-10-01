@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include "pico/stdlib.h"
+#include "hardware/timer.h"
+
+// Variáveis globais para armazenar horas, minutos e segundos
+volatile int horas = 0;
+volatile int minutos = 0;
+volatile int segundos = 0;
+
+// Função de callback do timer (chamada a cada 1 segundo)
+bool timer_callback(repeating_timer_t *rt) {
+    segundos++;
+
+    // Se os segundos chegarem a 60, reseta e incrementa os minutos
+    if (segundos == 60) {
+        segundos = 0;
+        minutos++;
+
+        // Se os minutos chegarem a 60, reseta e incrementa as horas
+        if (minutos == 60) {
+            minutos = 0;
+            horas++;
+
+            // Se as horas chegarem a 24, reseta as horas
+            if (horas == 24) {
+                horas = 0;
+            }
+        }
+    }
+
+    // Envia o horário formatado pela porta serial
+    printf("Horario Atual: %02d:%02d:%02d\n", horas, minutos, segundos);
+
+    return true;  // Retorna true para continuar repetindo o timer
+}
+
+int main() {
+    // Inicializa o sistema de saída serial
+    stdio_init_all();
+
+    // Espera a UART ficar pronta (para evitar enviar dados antes)
+    sleep_ms(2000);
+
+    // Cria um timer que dispara a cada 1000ms (1 segundo)
+    repeating_timer_t timer;
+    add_repeating_timer_ms(1000, timer_callback, NULL, &timer);
+
+    // Loop principal (fica vazio, já que o timer cuida da contagem)
+    while (1) {
+        tight_loop_contents();  // Mantém o loop rodando
+    }
+
+    return 0;
+}
