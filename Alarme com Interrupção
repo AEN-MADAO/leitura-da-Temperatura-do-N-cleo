@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include "pico/stdlib.h"
+#include "hardware/gpio.h"
+
+// Definir os pinos usados
+#define ALARM_PIN 15  // Pin do LED/Buzzer (alarme)
+#define BUTTON_PIN 14 // Pin do Botão/Sensor (entrada)
+
+// Função de callback da interrupção
+void gpio_callback(uint gpio, uint32_t events) {
+    // Ativa o alarme (LED/Buzzer)
+    gpio_put(ALARM_PIN, 1);
+    printf("Alarme disparado!\n");
+
+    // Delay para simular o tempo do alarme
+    sleep_ms(2000);
+
+    // Desativa o alarme após o tempo
+    gpio_put(ALARM_PIN, 0);
+    printf("Alarme desligado.\n");
+}
+
+int main() {
+    stdio_init_all();
+
+    // Configura os GPIOs
+    gpio_init(ALARM_PIN);
+    gpio_set_dir(ALARM_PIN, GPIO_OUT);  // Configura o alarme como saída (LED/Buzzer)
+
+    gpio_init(BUTTON_PIN);
+    gpio_set_dir(BUTTON_PIN, GPIO_IN);  // Configura o botão como entrada
+    gpio_pull_up(BUTTON_PIN);           // Habilita pull-up para o botão
+
+    // Configura a interrupção no botão (detecção de borda de descida)
+    gpio_set_irq_enabled_with_callback(BUTTON_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+
+    while (1) {
+        tight_loop_contents();  // Loop principal
+    }
+
+    return 0;
+}
